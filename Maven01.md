@@ -232,11 +232,14 @@
                 * 对主程序是否有效：有效
                 * 对测试程序是否有效：有效
                 * 是否参与打包：参与
+                * 是否参与部署：参与
+                * 典型例子：spring-core
 
             2) test范围依赖
                 * 对主程序是否有效：无效
                 * 对测试程序是否有效：有效
                 * 是否参与打包：不参与
+                * 是否参与部署：不参与
                 * 典型例子：junit
 
             3) provided范围依赖
@@ -245,6 +248,50 @@
                 * 是否参与打包：不参与
                 * 是否参与部署：不参与
                 * 典型例子：servlet-api.jar
+
+        <3> 依赖的传递性
+            1) 表现:当我们创建的项目A依赖x.jar时，如果我们在Maven项目中添加了对应的依赖，那么在同一工Maven程下的其它项
+                    目也同样对应的会添加x.jar的依赖
+
+            2) 好处：可以传递的依赖不必在每个模块工程中都重复声明，在"最下面"的工程中依赖一次即可
+
+            3) 注意：非compile范围的依赖不能够传递
+
+        <4> 依赖的排除
+            1) 依赖排除的场合：当我们使用某个依赖的jar包(如：a.jar)所依赖的另一个jar包(b.jar),如果不想b.jar加入当前工
+                             程，那么就排除b.jar
+
+            2) 依赖排除的方式：在pom.xml中的<dependency>下添加下面代码
+                
+                exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions> 
+
+        <5> 依赖的原则：解决jar包冲突
+            1) 验证路径最短优先原则
+                * 如下图所示，MakeFriends 依赖 HelloFriends，HelloFriend依赖log4j1.2.14 和 Hello，Hello依赖
+                  log4j1.2.17，那么MakeFriends就会依赖log4j1.2.14，这就是最短路径优先
+
+<img src="./img/img15.png" width = 800>
+
+            2) 验证路径相同时先声明者(指的是dependency声明顺序)优先
+
+<img src="./img/img16.png" width = 800>
+
+        <6> 统一管理所依赖jar包的版本
+            * 一般要求同一个框架一组jar包使用同一个版本，可以使用以下方式来确保版本一致
+
+                1) 统一声明版本号
+
+<img src="./img/img17.png" width = 800>
+
+                2) 引用前面声明的版本号 
+
+<img src="./img/img18.png" width = 800>
+
 
     9. 生命周期
         <1> 生命周期的说明
@@ -277,4 +324,50 @@
             3) 相似的目标是由对应的插件完成的
 
 <img src="./img/img07.png" width = 800>
+
+    10. 继承(其中父工程为Parent，子工程为Hello等)
+        <1> 现状(三个web工程依赖的jar版本)
+
+            Hello依赖的junit : 4.0
+            HellFriend依赖的junit : 4.0
+            MakeFriends依赖的junit : 4.9
+        
+            * 分析：由于test范围的依赖不能传递,所以必然会分散在各个模块工程中,很容易造成版本不一致。
+
+        <2> 需求:统-管理各个模块工程中对junit依赖的版本
+
+        <3> 解决思路:将junit依赖统一提取到"父”工程中,在子工程中声明junit依赖时不指定版本,以父工程中统一设定的为准
+
+        <4> 操作步骤    
+            1) 创建一个Maven工程作为父工程。 注意:打包的方式pom
+
+<img src="./img/img21.png" width = 800>
+
+            2) 在子工程中声明对父工程的引用
+
+<img src="./img/img19.png" width = 800>
+
+            3) 将子工程的坐标中与父工程坐标中重复的内容删除
+
+            4) 在父工程中统一junit的依赖
+
+<img src="./img/img20.png" width = 800>
+
+            5) 在子工程中删除junit依赖的版本号部分(如果保留了，那么版本就是保留的版本)
+
+        <5> 配置了继承之后，在执行mvn install命令时需要先安装父工程
+
+    11. 聚合
+        <1> 作用：一键安装各个模块工程
+
+        <2> 配置方式:在一个“总的聚合工程中”配置各个参与聚合的模块
+
+        <3> 为什么要使用聚合？
+            将多个工程拆分为模块后，需要手动逐个安装到仓库后依赖才能够生效。修改源码后也需要逐个手动进行 clean 操作。
+            使用了聚合之后就可以批量进行 Maven 工程的安装、清理工作。
+
+        <4> 如何配置聚合？
+            在总的聚合工程中使用 modules/module 标签组合，指定模块工程的相对路径即可
+
+<img src="./img/img22.png" width = 800>
 
